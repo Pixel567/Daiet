@@ -1,4 +1,4 @@
-# Daiet — AI-Powered Nutrition Assistant
+# Daiet — AI-Powered diet app
 
 **Daiet** is a modern, minimalist Android application built with Jetpack Compose, designed to simplify nutrition tracking through the power of Artificial Intelligence. Unlike traditional counters that require tedious manual database searches, Daiet allows users to log their meals naturally and intelligently.
 
@@ -33,8 +33,7 @@ Beyond logging, the application serves as a culinary inspiration hub, featuring 
    - Place it in the `app/` directory of the project.
 3. **Build & Run**:
    - Open the project in Android Studio, sync Gradle, and run the app on an Android 8.0+ device.
-4. **Configure AI**:
-   - Open the app, navigate to **Settings**, and enter your **Groq API Key** to activate the dietitian features.
+4. Configure Groq API key.
 
 ## Technical Stack
 
@@ -46,6 +45,3 @@ Beyond logging, the application serves as a culinary inspiration hub, featuring 
 - **TheMealDB API**: Source for global recipe discovery.
 - **Coil**: Optimized asynchronous image loading.
 - **CameraX & ML Kit**: High-speed barcode scanning.
-
----
-*Developed for a simple, smart, and healthy lifestyle.*
