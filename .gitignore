@@ -1,0 +1,29 @@
+# Android Studio / IntelliJ
+.idea/
+*.iml
+.gradle/
+local.properties
+captures/
+.externalNativeBuild/
+.cxx/
+cmake/
+
+# Build outputs
+**/build/
+
+# Firebase (Sensitive config)
+app/google-services.json
+
+# User-specific images (if any)
+app/*.png
+app/konto.png
+app/logowanie.png
+
+# Gradle
+.gradle/
+gradlew
+gradlew.bat
+gradle/wrapper/gradle-wrapper.jar
+
+# Log files
+*.log

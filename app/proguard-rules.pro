@@ -1,0 +1,3 @@
+-keep class com.nutrichat.app.network.NutritionalInfo { *; }
+-dontwarn okhttp3.**
+-dontwarn okio.**

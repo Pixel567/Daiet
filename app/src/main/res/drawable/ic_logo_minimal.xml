@@ -1,0 +1,29 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="200dp"
+    android:height="200dp"
+    android:viewportWidth="100"
+    android:viewportHeight="100">
+    <!-- Modern Minimalist Logo for Daiet -->
+    <!-- Stylized 'D' that looks like a leaf and a plate -->
+    <path
+        android:fillColor="#2E7D32"
+        android:pathData="M30,20
+                 L50,20
+                 C75,20 90,40 90,60
+                 C90,80 75,90 50,90
+                 L30,90
+                 L30,20 Z
+                 M42,32
+                 L42,78
+                 L50,78
+                 C68,78 78,70 78,60
+                 C78,50 68,32 50,32
+                 L42,32 Z" />
+
+    <!-- Sprout leaf accent -->
+    <path
+        android:fillColor="#4CAF50"
+        android:pathData="M50,20
+                 C50,5 65,0 75,5
+                 C65,5 55,15 50,20 Z" />
+</vector>
