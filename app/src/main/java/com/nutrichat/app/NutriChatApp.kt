@@ -6,7 +6,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.RestaurantMenu
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -38,6 +37,7 @@ import com.nutrichat.app.ui.dashboard.AddMealScreen
 import com.nutrichat.app.ui.dashboard.MealSelectionScreen
 import com.nutrichat.app.ui.settings.SettingsScreen
 import com.nutrichat.app.ui.theme.NutriChatTheme
+import androidx.compose.material.icons.filled.Settings
 
 sealed class Screen(val route: String, val label: String) {
     object Welcome : Screen("welcome", "Welcome")
@@ -53,7 +53,8 @@ sealed class Screen(val route: String, val label: String) {
 @Composable
 fun NutriChatApp() {
     val context = LocalContext.current
-    val userPrefs = remember { UserPreferencesRepository(context) }
+    // Use the Singleton instance to ensure real-time updates across the app
+    val userPrefs = remember { UserPreferencesRepository.getInstance(context) }
     val appTheme by userPrefs.theme.collectAsState()
 
     val darkTheme = when (appTheme) {
@@ -70,7 +71,6 @@ fun NutriChatApp() {
         val currentUser = Firebase.auth.currentUser
         val startDestination = if (currentUser != null) Screen.Chat.route else Screen.Welcome.route
 
-        // "Recipes" (MealSelection) added to bottom bar
         val bottomBarScreens = listOf(Screen.Chat, Screen.Dashboard, Screen.MealSelection, Screen.Settings)
         val showBottomBar = currentDestination?.route in bottomBarScreens.map { it.route }
 
@@ -153,14 +153,11 @@ fun NutriChatApp() {
                 composable(Screen.MealSelection.route) {
                     MealSelectionScreen(
                         onBack = { 
-                            // If it's a main tab, we don't necessarily pop back, 
-                            // but existing code handles sub-navigation (Categories/Meals)
                             if (navController.previousBackStackEntry != null) {
                                 navController.popBackStack()
                             }
                         },
                         onMealSaved = { 
-                            // Go to dashboard to see results
                             navController.navigate(Screen.Dashboard.route) {
                                 popUpTo(navController.graph.findStartDestination().id) {
                                     saveState = true

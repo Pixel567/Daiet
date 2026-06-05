@@ -17,7 +17,7 @@ data class DailyGoals(
     val fiber: Double = 30.0
 )
 
-class UserPreferencesRepository(context: Context) {
+class UserPreferencesRepository private constructor(context: Context) {
     private val prefs: SharedPreferences = context.getSharedPreferences("nutrichat_prefs", Context.MODE_PRIVATE)
 
     private val _goals = MutableStateFlow(loadGoals())
@@ -42,6 +42,14 @@ class UserPreferencesRepository(context: Context) {
         _theme.value = theme
     }
 
+    fun getGroqApiKey(): String {
+        return prefs.getString("groq_api_key", "") ?: ""
+    }
+
+    fun saveGroqApiKey(key: String) {
+        prefs.edit().putString("groq_api_key", key).apply()
+    }
+
     private fun loadGoals() = DailyGoals(
         calories = prefs.getFloat("goal_calories", 2000f).toDouble(),
         protein = prefs.getFloat("goal_protein", 150f).toDouble(),
@@ -56,6 +64,17 @@ class UserPreferencesRepository(context: Context) {
             AppTheme.valueOf(themeName ?: AppTheme.SYSTEM.name)
         } catch (e: Exception) {
             AppTheme.SYSTEM
+        }
+    }
+
+    companion object {
+        @Volatile
+        private var INSTANCE: UserPreferencesRepository? = null
+
+        fun getInstance(context: Context): UserPreferencesRepository {
+            return INSTANCE ?: synchronized(this) {
+                INSTANCE ?: UserPreferencesRepository(context.applicationContext).also { INSTANCE = it }
+            }
         }
     }
 }

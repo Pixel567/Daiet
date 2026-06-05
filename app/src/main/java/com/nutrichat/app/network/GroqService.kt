@@ -1,6 +1,7 @@
 package com.nutrichat.app.network
 
 import com.google.gson.Gson
+import com.google.gson.JsonElement
 import com.google.gson.JsonObject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -23,36 +24,36 @@ class GroqService(private val apiKey: String) {
         try {
             val url = "https://api.groq.com/openai/v1/chat/completions"
 
-            val prompt = """
-                Analyze the nutritional content of the following food: "$foodDescription"
+            val systemPrompt = """
+                You are a precise nutritional calculator. Your task is to extract food items and quantities from the input and calculate their total nutritional values.
                 
-                Instructions:
-                1. Identify the food and the EXACT quantity (e.g., "half a carrot", "2 slices of bread", "one medium apple").
-                2. If the quantity is descriptive (e.g., "half", "one piece", "a handful"), ESTIMATE the weight in grams for that specific portion.
-                3. IMPORTANT: Calculate ALL nutritional values (calories, protein, carbs, fat, fiber) for the SPECIFIC PORTION mentioned, NOT for 100g.
-                4. If no amount is specified, assume a standard serving size and mention it.
-                5. The "amount" field should contain the descriptive quantity and the estimated weight, e.g., "half a carrot (~35g)".
+                Rules:
+                1. Identify the food and the EXACT quantity.
+                2. Calculate values (calories, protein, carbs, fat, fiber) for the SPECIFIC PORTION provided, NOT for 100g.
+                3. The "amount" field should show the quantity and estimated weight, e.g. "2 large eggs (~110g)".
+                4. Set the "recipe" field ONLY if the user specifically asks for a recipe or meal suggestion. Otherwise, set "recipe" to null.
+                5. IMPORTANT: Every field in the JSON MUST be a simple primitive (String, Number, or null). NEVER return an Object or Array inside any field.
                 6. Respond in ENGLISH.
                 
-                Respond ONLY with a valid JSON object:
+                JSON Format:
                 {
-                  "productName": "product name",
-                  "amount": "quantity and estimated weight",
+                  "productName": "name of food",
+                  "amount": "description and weight",
                   "calories": 0.0,
                   "protein": 0.0,
                   "carbs": 0.0,
                   "fat": 0.0,
                   "fiber": 0.0,
-                  "summary": "short nutritional summary"
+                  "summary": "one sentence nutritional summary",
+                  "recipe": null
                 }
-                
-                Numeric values: Use grams (except calories = kcal).
             """.trimIndent()
 
             val bodyJson = mapOf(
                 "model" to "llama-3.3-70b-versatile",
                 "messages" to listOf(
-                    mapOf("role" to "user", "content" to prompt)
+                    mapOf("role" to "system", "content" to systemPrompt),
+                    mapOf("role" to "user", "content" to foodDescription)
                 ),
                 "response_format" to mapOf("type" to "json_object"),
                 "temperature" to 0.1
@@ -79,14 +80,57 @@ class GroqService(private val apiKey: String) {
                 return@withContext Result.failure(Exception(errorMsg))
             }
 
-            val content = gson.fromJson(raw, JsonObject::class.java)
-                .getAsJsonArray("choices")
+            val responseJson = gson.fromJson(raw, JsonObject::class.java)
+            val content = responseJson.getAsJsonArray("choices")
                 ?.get(0)?.asJsonObject
                 ?.getAsJsonObject("message")
                 ?.get("content")?.asString
                 ?: error("Unexpected response structure")
 
-            Result.success(gson.fromJson(content.trim(), NutritionalInfo::class.java))
+            // Safe parsing to handle cases where AI might ignore "no objects" rule
+            val resultJsonObject = gson.fromJson(content.trim(), JsonObject::class.java)
+            
+            fun safeString(key: String): String {
+                val element = resultJsonObject.get(key)
+                return when {
+                    element == null || element.isJsonNull -> ""
+                    element.isJsonPrimitive -> element.asString
+                    else -> element.toString()
+                }
+            }
+
+            fun safeDouble(key: String): Double {
+                val element = resultJsonObject.get(key)
+                return when {
+                    element == null || element.isJsonNull -> 0.0
+                    element.isJsonPrimitive -> {
+                        if (element.asJsonPrimitive.isNumber) element.asDouble
+                        else element.asString.toDoubleOrNull() ?: 0.0
+                    }
+                    else -> 0.0
+                }
+            }
+
+            val recipeElement = resultJsonObject.get("recipe")
+            val recipeString = when {
+                recipeElement == null || recipeElement.isJsonNull -> null
+                recipeElement.isJsonPrimitive -> recipeElement.asString
+                else -> recipeElement.toString()
+            }
+
+            val info = NutritionalInfo(
+                productName = safeString("productName"),
+                amount = safeString("amount"),
+                calories = safeDouble("calories"),
+                protein = safeDouble("protein"),
+                carbs = safeDouble("carbs"),
+                fat = safeDouble("fat"),
+                fiber = safeDouble("fiber"),
+                summary = safeString("summary"),
+                recipe = recipeString
+            )
+
+            Result.success(info)
         } catch (e: Exception) {
             Result.failure(e)
         }

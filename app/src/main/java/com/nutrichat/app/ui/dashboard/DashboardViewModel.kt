@@ -30,7 +30,7 @@ data class DashboardUiState(
 class DashboardViewModel(application: Application) : AndroidViewModel(application) {
 
     private val repo = MealRepository(application)
-    private val userPrefs = UserPreferencesRepository(application)
+    private val userPrefs = UserPreferencesRepository.getInstance(application)
 
     private val _selectedDate = MutableStateFlow(System.currentTimeMillis())
 

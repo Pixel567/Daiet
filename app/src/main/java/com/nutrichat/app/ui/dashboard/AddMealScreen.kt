@@ -65,6 +65,7 @@ fun AddMealScreen(
 
     var currentInfo by remember { mutableStateOf<NutritionalInfo?>(null) }
     
+    // Improved LaunchedEffect logic to handle transitions between scanned data and AI recalculations
     LaunchedEffect(scannedProduct, lastBotInfo) {
         if (scannedProduct != null) {
             currentInfo = scannedProduct
@@ -126,13 +127,15 @@ fun AddMealScreen(
                     shape = RoundedCornerShape(12.dp)
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
-                        Text("Describe what you ate", fontWeight = FontWeight.Bold)
+                        Text("What did you eat?", fontWeight = FontWeight.Bold)
+                        Spacer(Modifier.height(4.dp))
+                        Text("Enter product name and amount", fontSize = 12.sp, color = MaterialTheme.colorScheme.outline)
                         Spacer(Modifier.height(8.dp))
                         OutlinedTextField(
                             value = textInput,
                             onValueChange = { textInput = it },
                             modifier = Modifier.fillMaxWidth(),
-                            placeholder = { Text("e.g. 2 eggs and a toast") },
+                            placeholder = { Text("e.g. 2 eggs, 100g chicken breast") },
                             trailingIcon = {
                                 IconButton(
                                     onClick = {
@@ -142,13 +145,14 @@ fun AddMealScreen(
                                                 return@IconButton
                                             }
                                             scannedProduct = null
-                                            chatViewModel.sendMessage(textInput)
+                                            // Fixed: Using direct analysis instead of general suggestion
+                                            chatViewModel.analyzeFoodDirectly(textInput)
                                             errorMessage = null
                                         }
                                     },
                                     enabled = !isLoading
                                 ) {
-                                    Icon(Icons.Default.Send, contentDescription = "Analyze")
+                                    Icon(Icons.Default.Analytics, contentDescription = "Analyze")
                                 }
                             }
                         )
@@ -197,7 +201,11 @@ fun AddMealScreen(
                                 errorMessage = "No internet connection."
                                 return@NutritionalResultView
                             }
-                            chatViewModel.sendMessage("Recalculate nutrition for: $newAmount of ${info.productName}")
+                            // Scaled recalculation logic
+                            val prompt = "Provide nutritional values for $newAmount of ${info.productName} based on: ${info.calories} kcal per ${info.amount}."
+                            
+                            scannedProduct = null
+                            chatViewModel.analyzeFoodDirectly(prompt)
                             editMode = EditMode.NONE
                         },
                         onUpdateLocally = { updated ->

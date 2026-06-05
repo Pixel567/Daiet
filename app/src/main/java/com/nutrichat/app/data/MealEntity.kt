@@ -14,5 +14,6 @@ data class MealEntity(
     val carbs: Double,
     val fat: Double,
     val fiber: Double,
+    val recipe: String? = null,
     val dateMillis: Long = System.currentTimeMillis()
 )

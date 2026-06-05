@@ -7,6 +7,8 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Scale
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -37,6 +39,7 @@ fun NutritionalResultView(
     var editCarbs by remember(info, editMode) { mutableStateOf(info.carbs.toString()) }
     var editFat by remember(info, editMode) { mutableStateOf(info.fat.toString()) }
     var editFiber by remember(info, editMode) { mutableStateOf(info.fiber.toString()) }
+    var showRecipe by remember { mutableStateOf(false) }
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -49,6 +52,29 @@ fun NutritionalResultView(
             if (info.summary.isNotBlank() && editMode == EditMode.NONE) {
                 Spacer(Modifier.height(4.dp))
                 Text(info.summary, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+
+            if (info.recipe != null && editMode == EditMode.NONE) {
+                Spacer(Modifier.height(8.dp))
+                TextButton(
+                    onClick = { showRecipe = !showRecipe },
+                    contentPadding = PaddingValues(0.dp)
+                ) {
+                    Icon(
+                        if (showRecipe) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                        contentDescription = null
+                    )
+                    Spacer(Modifier.width(4.dp))
+                    Text(if (showRecipe) "Hide Recipe" else "Show Full Recipe", fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                }
+                if (showRecipe) {
+                    Text(
+                        text = info.recipe,
+                        fontSize = 13.sp,
+                        lineHeight = 18.sp,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+                }
             }
 
             Spacer(Modifier.height(16.dp))

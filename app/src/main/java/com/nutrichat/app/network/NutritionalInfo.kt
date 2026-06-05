@@ -8,5 +8,6 @@ data class NutritionalInfo(
     val carbs: Double = 0.0,
     val fat: Double = 0.0,
     val fiber: Double = 0.0,
-    val summary: String = ""
+    val summary: String = "",
+    val recipe: String? = null
 )

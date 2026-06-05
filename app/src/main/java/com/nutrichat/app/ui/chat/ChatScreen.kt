@@ -20,11 +20,16 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.RestaurantMenu
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
@@ -64,12 +69,12 @@ fun ChatScreen(viewModel: ChatViewModel = viewModel()) {
                 title = {
                     Column {
                         Text(
-                            "Daiet Chat",
+                            "Daiet Assistant",
                             fontWeight = FontWeight.Bold,
                             fontSize = 18.sp
                         )
                         Text(
-                            "AI Nutrition Assistant",
+                            "Your Personal AI Dietitian",
                             fontSize = 12.sp,
                             color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f)
                         )
@@ -86,55 +91,70 @@ fun ChatScreen(viewModel: ChatViewModel = viewModel()) {
                 shadowElevation = 8.dp,
                 color = MaterialTheme.colorScheme.surface
             ) {
-                Row(
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 12.dp, vertical = 8.dp)
                         .imePadding()
-                        .navigationBarsPadding(),
-                    verticalAlignment = Alignment.CenterVertically
+                        .navigationBarsPadding()
+                        .padding(12.dp)
                 ) {
-                    OutlinedTextField(
-                        value = inputText,
-                        onValueChange = { inputText = it },
-                        modifier = Modifier.weight(1f),
-                        placeholder = { Text("Ex. 200g chicken breast...", fontSize = 13.sp) },
+                    // Quick suggestion button
+                    Button(
+                        onClick = { viewModel.requestSuggestion() },
+                        modifier = Modifier.fillMaxWidth().height(48.dp),
                         shape = RoundedCornerShape(24.dp),
-                        maxLines = 3,
-                        keyboardOptions = KeyboardOptions(
-                            capitalization = KeyboardCapitalization.Sentences,
-                            imeAction = ImeAction.Send
-                        ),
-                        keyboardActions = KeyboardActions(
-                            onSend = {
-                                if (inputText.isNotBlank() && !uiState.isLoading) {
-                                    viewModel.sendMessage(inputText.trim())
-                                    inputText = ""
-                                }
-                            }
-                        )
-                    )
-                    Spacer(Modifier.width(8.dp))
-                    Box(
-                        modifier = Modifier
-                            .size(48.dp)
-                            .clip(CircleShape)
-                            .background(
-                                if (inputText.isNotBlank() && !uiState.isLoading)
-                                    MaterialTheme.colorScheme.primary
-                                else
-                                    MaterialTheme.colorScheme.outline
-                            ),
-                        contentAlignment = Alignment.Center
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary),
+                        enabled = !uiState.isLoading
                     ) {
+                        Icon(Icons.Default.AutoAwesome, contentDescription = null)
+                        Spacer(Modifier.width(8.dp))
+                        Text("Get Immediate Suggestion")
+                    }
+                    
+                    Spacer(Modifier.height(8.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        OutlinedTextField(
+                            value = inputText,
+                            onValueChange = { inputText = it },
+                            modifier = Modifier.weight(1f),
+                            placeholder = { Text("Ask about ingredients in your fridge...", fontSize = 13.sp) },
+                            shape = RoundedCornerShape(24.dp),
+                            maxLines = 3,
+                            keyboardOptions = KeyboardOptions(
+                                capitalization = KeyboardCapitalization.Sentences,
+                                imeAction = ImeAction.Send
+                            ),
+                            keyboardActions = KeyboardActions(
+                                onSend = {
+                                    if (inputText.isNotBlank() && !uiState.isLoading) {
+                                        viewModel.requestSuggestion(inputText.trim())
+                                        inputText = ""
+                                    }
+                                }
+                            )
+                        )
+                        Spacer(Modifier.width(8.dp))
                         IconButton(
                             onClick = {
                                 if (inputText.isNotBlank() && !uiState.isLoading) {
-                                    viewModel.sendMessage(inputText.trim())
+                                    viewModel.requestSuggestion(inputText.trim())
                                     inputText = ""
                                 }
                             },
-                            enabled = inputText.isNotBlank() && !uiState.isLoading
+                            enabled = inputText.isNotBlank() && !uiState.isLoading,
+                            modifier = Modifier
+                                .size(48.dp)
+                                .clip(CircleShape)
+                                .background(
+                                    if (inputText.isNotBlank() && !uiState.isLoading)
+                                        MaterialTheme.colorScheme.primary
+                                    else
+                                        MaterialTheme.colorScheme.outline
+                                )
                         ) {
                             Icon(
                                 Icons.Default.Send,
@@ -154,7 +174,7 @@ fun ChatScreen(viewModel: ChatViewModel = viewModel()) {
                 .padding(padding)
                 .padding(horizontal = 12.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
-            contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = 12.dp)
+            contentPadding = PaddingValues(vertical = 12.dp)
         ) {
             items(uiState.messages, key = { it.id }) { msg ->
                 AnimatedVisibility(
@@ -202,6 +222,8 @@ private fun UserBubble(text: String) {
 
 @Composable
 private fun BotBubble(msg: ChatMessage, onAdd: () -> Unit) {
+    var showRecipe by remember { mutableStateOf(false) }
+
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.Start,
@@ -221,7 +243,7 @@ private fun BotBubble(msg: ChatMessage, onAdd: () -> Unit) {
             )
         }
         Spacer(Modifier.width(6.dp))
-        Column(modifier = Modifier.widthIn(max = 290.dp)) {
+        Column(modifier = Modifier.widthIn(max = 300.dp)) {
             Card(
                 shape = RoundedCornerShape(4.dp, 18.dp, 18.dp, 18.dp),
                 colors = CardDefaults.cardColors(
@@ -229,20 +251,55 @@ private fun BotBubble(msg: ChatMessage, onAdd: () -> Unit) {
                 ),
                 elevation = CardDefaults.cardElevation(2.dp)
             ) {
-                Text(
-                    text = msg.text,
-                    modifier = Modifier.padding(12.dp, 10.dp),
-                    fontSize = 14.sp,
-                    lineHeight = 20.sp
-                )
+                Column(modifier = Modifier.padding(12.dp, 10.dp)) {
+                    Text(
+                        text = msg.text,
+                        fontSize = 14.sp,
+                        lineHeight = 20.sp
+                    )
+                    
+                    msg.nutritionalInfo?.recipe?.let { recipe ->
+                        Spacer(Modifier.height(8.dp))
+                        HorizontalDivider(modifier = Modifier.alpha(0.2f))
+                        Spacer(Modifier.height(8.dp))
+                        
+                        TextButton(
+                            onClick = { showRecipe = !showRecipe },
+                            contentPadding = PaddingValues(0.dp),
+                            modifier = Modifier.height(32.dp)
+                        ) {
+                            Icon(
+                                if (showRecipe) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                                contentDescription = null,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(Modifier.width(4.dp))
+                            Text(
+                                if (showRecipe) "Hide Recipe" else "Show Full Recipe",
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                        
+                        if (showRecipe) {
+                            Spacer(Modifier.height(4.dp))
+                            Text(
+                                text = recipe,
+                                fontSize = 13.sp,
+                                lineHeight = 18.sp,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
+                            )
+                        }
+                    }
+                }
             }
             if (msg.nutritionalInfo != null) {
-                Spacer(Modifier.height(4.dp))
+                Spacer(Modifier.height(6.dp))
                 Button(
                     onClick = onAdd,
                     modifier = Modifier.height(34.dp),
                     shape = RoundedCornerShape(8.dp),
-                    contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 12.dp),
+                    contentPadding = PaddingValues(horizontal = 12.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.secondary
                     )
